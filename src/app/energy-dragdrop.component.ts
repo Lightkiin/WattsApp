@@ -8,157 +8,105 @@ import { FormsModule } from '@angular/forms';
   imports: [CommonModule, FormsModule],
   template: `
     <div class="container">
-      <h2>Arraste a imagem do eletrodoméstico para o retângulo</h2>
+      <h2>Arraste o eletrodoméstico para o retângulo</h2>
 
-      <div
-        class="dropzone"
-        (dragover)="$event.preventDefault()"
-        (drop)="onDrop($event)"
-        (click)="fileInput.click()">
-        <input #fileInput type="file" accept="image/*" (change)="onFileSelected($event)" hidden />
-
-        @if (!imageSrc) {
-          <p>Arraste e solte aqui ou clique para escolher uma imagem</p>
-        }
-
-        @if (imageSrc) {
-          <div class="preview-area">
-            <img [src]="imageSrc" alt="Imagem" />
-            <div class="info">
-              <p><strong>Arquivo:</strong> {{fileName}}</p>
-              <p><strong>Eletrodoméstico (detectado):</strong>
-                <select [(ngModel)]="detectedApplianceKey" (change)="onApplianceChanged()">
-                  @for (key of applianceKeys; track key) {
-                    <option [value]="key">{{appliances[key].label}}</option>
-                  }
-                </select>
-              </p>
-
-              <p><strong>Potência (W):</strong>
-                <input type="number" [(ngModel)]="powerW" (input)="recalculate()" /> W
-              </p>
-              <p><strong>Uso por dia:</strong>
-                <input type="number" [(ngModel)]="hoursPerDay" (input)="recalculate()" /> horas/dia
-              </p>
-              <p><strong>Tarifa / kWh:</strong>
-                <input type="number" [(ngModel)]="costPerKwh" (input)="recalculate()" /> BRL
-              </p>
-
-              <hr />
-              <p><strong>Consumo:</strong></p>
-              <p>{{energyPerDayKwh | number:'1.3-3'}} kWh / dia</p>
-              <p>{{energyPerMonthKwh | number:'1.3-3'}} kWh / mês (30 dias)</p>
-              <p><strong>Custo estimado:</strong> {{costPerMonth | number:'1.2-2'}} BRL / mês</p>
-
-              <button (click)="clear()">Remover imagem</button>
-            </div>
-          </div>
-        }
+      <!-- Galeria de imagens -->
+      <div class="gallery">
+        <div 
+          class="appliance" 
+          *ngFor="let key of applianceKeys" 
+          draggable="true"
+          (dragstart)="onDragStart($event, key)">
+          <img [src]="appliances[key].image" [alt]="appliances[key].label" />
+          <p>{{ appliances[key].label }}</p>
+        </div>
       </div>
 
-      <p class="note">
-        Dica: o componente tenta identificar o eletrodoméstico pelo nome do arquivo (ex: geladeira.jpg, microondas.png, tv.png).
-        Se a identificação estiver errada, selecione manualmente no dropdown e ajuste potência/horas.
-      </p>
+      <!-- Área de drop -->
+      <div 
+        class="dropzone" 
+        (dragover)="$event.preventDefault()" 
+        (drop)="onDrop($event)">
+        
+        <ng-container *ngIf="!detectedApplianceKey">
+          <p>Arraste aqui</p>
+        </ng-container>
+
+        <div *ngIf="detectedApplianceKey" class="preview-area">
+          <img [src]="appliances[detectedApplianceKey].image" [alt]="appliances[detectedApplianceKey].label" />
+          <div class="info">
+            <p><strong>{{ appliances[detectedApplianceKey].label }}</strong></p>
+
+            <p><strong>Potência (W):</strong> 
+              <input type="number" [(ngModel)]="powerW" (input)="recalculate()" /> W
+            </p>
+            <p><strong>Uso por dia:</strong> 
+              <input type="number" [(ngModel)]="hoursPerDay" (input)="recalculate()" /> horas/dia
+            </p>
+            <p><strong>Tarifa / kWh:</strong> 
+              <input type="number" [(ngModel)]="costPerKwh" (input)="recalculate()" /> BRL
+            </p>
+
+            <hr />
+            <p><strong>Consumo:</strong></p>
+            <p>{{energyPerDayKwh | number:'1.2-2'}} kWh / dia</p>
+            <p>{{energyPerMonthKwh | number:'1.2-2'}} kWh / mês (30 dias)</p>
+            <p><strong>Custo estimado:</strong> {{costPerMonth | number:'1.2-2'}} BRL / mês</p>
+
+            <button (click)="clear()">Remover</button>
+          </div>
+        </div>
+      </div>
     </div>
   `,
-  styles: [
-    `:host{display:block;font-family:Arial,Helvetica,sans-serif}
-    .container{max-width:900px;margin:18px auto;padding:12px}
-    .dropzone{border:2px dashed #bbb;border-radius:8px;padding:20px;min-height:200px;display:flex;align-items:center;justify-content:center;cursor:pointer}
-    .dropzone p{margin:0;color:#666}
-    .preview-area{display:flex;gap:16px;align-items:flex-start}
-    img{max-width:220px;max-height:180px;border-radius:6px;object-fit:contain}
-    .info{flex:1}
-    input[type=number]{width:110px}
-    select{min-width:180px}
-    .note{color:#444;font-size:13px;margin-top:8px}
-    button{margin-top:8px;padding:6px 10px;border-radius:6px;border:1px solid #888;background:#f5f5f5}
-    `]
+  styles: [`
+    .container { max-width: 900px; margin: 18px auto; font-family: Arial, sans-serif; }
+    .gallery { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
+    .appliance { text-align: center; cursor: grab; width: 120px; }
+    .appliance img { width: 100px; height: 100px; object-fit: contain; }
+    .dropzone { border: 2px dashed #888; padding: 30px; border-radius: 8px; min-height: 220px; display: flex; align-items: center; justify-content: center; }
+    .preview-area { display: flex; gap: 20px; align-items: flex-start; }
+    .preview-area img { width: 150px; height: 150px; object-fit: contain; border-radius: 6px; }
+    .info { flex: 1; }
+    input { margin: 3px 0; }
+    button { margin-top: 8px; padding: 6px 10px; border-radius: 6px; border: 1px solid #888; background: #f5f5f5 }
+  `]
 })
 export class EnergyDragdropComponent {
-  imageSrc: string | null = null;
-  fileName: string | null = null;
-
-  detectedApplianceKey: string = '';
-  powerW: number = 1000;
+  detectedApplianceKey: string | null = null;
+  powerW: number = 0;
   hoursPerDay: number = 1;
-  costPerKwh: number = 1.0;
+  costPerKwh: number = 1;
 
   energyPerDayKwh: number = 0;
   energyPerMonthKwh: number = 0;
   costPerMonth: number = 0;
 
-  appliances: { [key: string]: { label: string; watt: number } } = {
-    geladeira: { label: 'Geladeira / Refrigerador (média)', watt: 150 },
-    tv: { label: 'TV (LED) - 32" (média)', watt: 80 },
-    tv_grande: { label: 'TV (LED) - 55" (média)', watt: 120 },
-    microondas: { label: 'Micro-ondas', watt: 1000 },
-    ferro: { label: 'Ferro de passar', watt: 1200 },
-    lavadora: { label: 'Máquina de lavar', watt: 500 },
-    secadora: { label: 'Secadora', watt: 3000 },
-    ar_condicionado: { label: 'Ar condicionado (split - média)', watt: 1200 },
-    computador: { label: 'Computador desktop', watt: 200 },
-    forno: { label: 'Forno elétrico', watt: 2000 },
-    lampada: { label: 'Lâmpada (LED) - por unidade', watt: 10 }
+  appliances: { [key: string]: { label: string; watt: number; image: string } } = {
+    geladeira: { label: 'Geladeira', watt: 150, image: '/assets/appliances/geladeira.png' },
+    tv: { label: 'TV', watt: 80, image: 'assets/appliances/tv.png' },
+    microondas: { label: 'Micro-ondas', watt: 1000, image: 'assets/appliances/microondas.png' },
+    ferro: { label: 'Ferro de passar', watt: 1200, image: 'assets/appliances/ferro.png' },
+    ar: { label: 'Ar-condicionado', watt: 1200, image: 'assets/appliances/ar.png' },
+    lampada: { label: 'Lâmpada LED', watt: 10, image: 'assets/appliances/lampada.png' }
   };
 
   get applianceKeys() {
     return Object.keys(this.appliances);
   }
 
+  onDragStart(event: DragEvent, key: string) {
+    if (event.dataTransfer) {
+      event.dataTransfer.setData('appliance', key);
+    }
+  }
+
   onDrop(event: DragEvent) {
     event.preventDefault();
-    const dt = event.dataTransfer;
-    if (!dt) return;
-    const file = dt.files && dt.files[0];
-    if (file) this.loadFile(file);
-  }
-
-  onFileSelected(ev: Event) {
-    const input = ev.target as HTMLInputElement;
-    if (!input.files || input.files.length === 0) return;
-    this.loadFile(input.files[0]);
-  }
-
-  loadFile(file: File) {
-    this.fileName = file.name;
-    const reader = new FileReader();
-    reader.onload = () => {
-      this.imageSrc = reader.result as string;
-      const inferred = this.inferApplianceFromFilename(file.name);
-      if (inferred) {
-        this.detectedApplianceKey = inferred;
-        this.powerW = this.appliances[inferred].watt;
-      } else {
-        this.detectedApplianceKey = Object.keys(this.appliances)[0];
-        this.powerW = this.appliances[this.detectedApplianceKey].watt;
-      }
-      this.recalculate();
-    };
-    reader.readAsDataURL(file);
-  }
-
-  inferApplianceFromFilename(name: string): string | null {
-    const n = name.toLowerCase();
-    if (n.includes('geladeira') || n.includes('refrigerador') || n.includes('fridge')) return 'geladeira';
-    if (n.includes('tv') || n.includes('televisao') || n.includes('televisão')) return 'tv';
-    if (n.includes('55') && n.includes('tv')) return 'tv_grande';
-    if (n.includes('micro') || n.includes('microondas')) return 'microondas';
-    if (n.includes('ferro')) return 'ferro';
-    if (n.includes('lav') || n.includes('lava')) return 'lavadora';
-    if (n.includes('sec') && n.includes('d')) return 'secadora';
-    if (n.includes('ar') && n.includes('cond')) return 'ar_condicionado';
-    if (n.includes('pc') || n.includes('desktop') || n.includes('computador')) return 'computador';
-    if (n.includes('forno')) return 'forno';
-    if (n.includes('lamp') || n.includes('led')) return 'lampada';
-    if (n.includes('oven')) return 'forno';
-    return null;
-  }
-
-  onApplianceChanged() {
-    if (this.detectedApplianceKey && this.appliances[this.detectedApplianceKey]) {
-      this.powerW = this.appliances[this.detectedApplianceKey].watt;
+    const key = event.dataTransfer?.getData('appliance');
+    if (key && this.appliances[key]) {
+      this.detectedApplianceKey = key;
+      this.powerW = this.appliances[key].watt;
       this.recalculate();
     }
   }
@@ -170,11 +118,10 @@ export class EnergyDragdropComponent {
   }
 
   clear() {
-    this.imageSrc = null;
-    this.fileName = null;
-    this.detectedApplianceKey = '';
-    this.powerW = 1000;
+    this.detectedApplianceKey = null;
+    this.powerW = 0;
     this.hoursPerDay = 1;
+    this.costPerKwh = 1;
     this.energyPerDayKwh = 0;
     this.energyPerMonthKwh = 0;
     this.costPerMonth = 0;
