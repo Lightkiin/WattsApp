@@ -1,89 +1,22 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { NgChartsModule } from 'ng2-charts';
 
 @Component({
   selector: 'app-energy-dragdrop',
   standalone: true,
-  imports: [CommonModule, FormsModule],
-  template: `
-    <div class="container">
-      <h2>Arraste o eletrodoméstico para o retângulo</h2>
-
-      <!-- Galeria de imagens -->
-      <div class="gallery">
-        <div 
-          class="appliance" 
-          *ngFor="let key of applianceKeys" 
-          draggable="true"
-          (dragstart)="onDragStart($event, key)">
-          <img [src]="appliances[key].image" [alt]="appliances[key].label" />
-          <p>{{ appliances[key].label }}</p>
-        </div>
-      </div>
-
-      <!-- Área de drop -->
-      <div 
-        class="dropzone" 
-        (dragover)="$event.preventDefault()" 
-        (drop)="onDrop($event)">
-        
-        <ng-container *ngIf="!detectedApplianceKey">
-          <p>Arraste aqui</p>
-        </ng-container>
-
-        <div *ngIf="detectedApplianceKey" class="preview-area">
-          <img [src]="appliances[detectedApplianceKey].image" [alt]="appliances[detectedApplianceKey].label" />
-          <div class="info">
-            <p><strong>{{ appliances[detectedApplianceKey].label }}</strong></p>
-
-            <p><strong>Potência (W):</strong> 
-              <input type="number" [(ngModel)]="powerW" (input)="recalculate()" /> W
-            </p>
-            <p><strong>Uso por dia:</strong> 
-              <input type="number" [(ngModel)]="hoursPerDay" (input)="recalculate()" /> horas/dia
-            </p>
-            <p><strong>Tarifa / kWh:</strong> 
-              <input type="number" [(ngModel)]="costPerKwh" (input)="recalculate()" /> BRL
-            </p>
-
-            <hr />
-            <p><strong>Consumo:</strong></p>
-            <p>{{energyPerDayKwh | number:'1.2-2'}} kWh / dia</p>
-            <p>{{energyPerMonthKwh | number:'1.2-2'}} kWh / mês (30 dias)</p>
-            <p><strong>Custo estimado:</strong> {{costPerMonth | number:'1.2-2'}} BRL / mês</p>
-
-            <button (click)="clear()">Remover</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  `,
-  styles: [`
-    .container { max-width: 900px; margin: 18px auto; font-family: Arial, sans-serif; }
-    .gallery { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
-    .appliance { text-align: center; cursor: grab; width: 120px; }
-    .appliance img { width: 100px; height: 100px; object-fit: contain; }
-    .dropzone { border: 2px dashed #888; padding: 30px; border-radius: 8px; min-height: 220px; display: flex; align-items: center; justify-content: center; }
-    .preview-area { display: flex; gap: 20px; align-items: flex-start; }
-    .preview-area img { width: 150px; height: 150px; object-fit: contain; border-radius: 6px; }
-    .info { flex: 1; }
-    input { margin: 3px 0; }
-    button { margin-top: 8px; padding: 6px 10px; border-radius: 6px; border: 1px solid #888; background: #f5f5f5 }
-  `]
+  imports: [CommonModule, FormsModule, NgChartsModule],
+  templateUrl: './energy-dragdrop.component.html',
+  styleUrls: ['./energy-dragdrop.component.css']
 })
 export class EnergyDragdropComponent {
-  detectedApplianceKey: string | null = null;
-  powerW: number = 0;
-  hoursPerDay: number = 1;
-  costPerKwh: number = 1;
+  // Lista de eletrodomésticos adicionados
+  selectedAppliances: string[] = [];
 
-  energyPerDayKwh: number = 0;
-  energyPerMonthKwh: number = 0;
-  costPerMonth: number = 0;
-
+  // Configuração de cada eletrodoméstico
   appliances: { [key: string]: { label: string; watt: number; image: string } } = {
-    geladeira: { label: 'Geladeira', watt: 150, image: '/assets/appliances/geladeira.png' },
+    geladeira: { label: 'Geladeira', watt: 150, image: 'assets/appliances/geladeira.png' },
     tv: { label: 'TV', watt: 80, image: 'assets/appliances/tv.png' },
     microondas: { label: 'Micro-ondas', watt: 1000, image: 'assets/appliances/microondas.png' },
     ferro: { label: 'Ferro de passar', watt: 1200, image: 'assets/appliances/ferro.png' },
@@ -91,39 +24,70 @@ export class EnergyDragdropComponent {
     lampada: { label: 'Lâmpada LED', watt: 10, image: 'assets/appliances/lampada.png' }
   };
 
+  // Guarda os valores individuais de cada item
+  usage: { [key: string]: { powerW: number; hoursPerDay: number; costPerKwh: number } } = {};
+
+  // Gráficos
+  barChartData = {
+    labels: ['Diário', 'Mensal'],
+    datasets: [{ label: 'Consumo (kWh)', data: [0, 0], backgroundColor: ['#36A2EB', '#FF6384'] }]
+  };
+
+  pieChartData = {
+    labels: [] as string[],
+    datasets: [{ data: [] as number[], backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'] }]
+  };
+
   get applianceKeys() {
     return Object.keys(this.appliances);
   }
 
+  // === Drag & Drop ===
   onDragStart(event: DragEvent, key: string) {
-    if (event.dataTransfer) {
-      event.dataTransfer.setData('appliance', key);
-    }
+    event.dataTransfer?.setData('appliance', key);
   }
 
   onDrop(event: DragEvent) {
     event.preventDefault();
     const key = event.dataTransfer?.getData('appliance');
-    if (key && this.appliances[key]) {
-      this.detectedApplianceKey = key;
-      this.powerW = this.appliances[key].watt;
+    if (key && this.appliances[key] && !this.selectedAppliances.includes(key)) {
+      this.selectedAppliances.push(key);
+      this.usage[key] = {
+        powerW: this.appliances[key].watt,
+        hoursPerDay: 1,
+        costPerKwh: 1
+      };
       this.recalculate();
     }
   }
 
+  // === Recalcula todos os gráficos ===
   recalculate() {
-    this.energyPerDayKwh = (this.powerW / 1000) * (this.hoursPerDay || 0);
-    this.energyPerMonthKwh = this.energyPerDayKwh * 30;
-    this.costPerMonth = this.energyPerMonthKwh * (this.costPerKwh || 0);
+    let totalDaily = 0;
+    let totalMonthly = 0;
+    const pieData: number[] = [];
+    const pieLabels: string[] = [];
+
+    this.selectedAppliances.forEach(key => {
+      const { powerW, hoursPerDay, costPerKwh } = this.usage[key];
+      const energyDay = (powerW / 1000) * hoursPerDay;
+      const energyMonth = energyDay * 30;
+      totalDaily += energyDay;
+      totalMonthly += energyMonth;
+
+      pieData.push(energyMonth * costPerKwh);
+      pieLabels.push(this.appliances[key].label);
+    });
+
+    this.barChartData.datasets[0].data = [totalDaily, totalMonthly];
+    this.pieChartData.datasets[0].data = pieData;
+    this.pieChartData.labels = pieLabels;
   }
 
-  clear() {
-    this.detectedApplianceKey = null;
-    this.powerW = 0;
-    this.hoursPerDay = 1;
-    this.costPerKwh = 1;
-    this.energyPerDayKwh = 0;
-    this.energyPerMonthKwh = 0;
-    this.costPerMonth = 0;
+  // === Remove eletrodoméstico específico ===
+  removeAppliance(key: string) {
+    this.selectedAppliances = this.selectedAppliances.filter(k => k !== key);
+    delete this.usage[key];
+    this.recalculate();
   }
 }

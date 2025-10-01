@@ -1,0 +1,51 @@
+<div class="container">
+  <h2>Arraste os eletrodomésticos para o retângulo</h2>
+
+  <!-- Galeria de imagens -->
+  <div class="gallery">
+    <div *ngFor="let key of applianceKeys" class="appliance" draggable="true"
+         (dragstart)="onDragStart($event,key)">
+      <img [src]="appliances[key].image" [alt]="appliances[key].label" />
+      <p>{{ appliances[key].label }}</p>
+    </div>
+  </div>
+
+  <!-- Área de drop -->
+  <div class="dropzone" (dragover)="$event.preventDefault()" (drop)="onDrop($event)">
+    <ng-container *ngIf="selectedAppliances.length === 0">
+      <p>Arraste aqui</p>
+    </ng-container>
+
+    <div *ngFor="let key of selectedAppliances" class="preview-area">
+      <img [src]="appliances[key].image" [alt]="appliances[key].label" />
+      <div class="info">
+        <p><strong>{{ appliances[key].label }}</strong></p>
+        <p><strong>Potência (W):</strong>
+          <input type="number" [(ngModel)]="usage[key].powerW" (input)="recalculate()" /> W
+        </p>
+        <p><strong>Uso por dia:</strong>
+          <input type="number" [(ngModel)]="usage[key].hoursPerDay" (input)="recalculate()" /> horas/dia
+        </p>
+        <p><strong>Tarifa / kWh:</strong>
+          <input type="number" [(ngModel)]="usage[key].costPerKwh" (input)="recalculate()" /> BRL
+        </p>
+        <button (click)="removeAppliance(key)">Remover</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gráficos -->
+  <div *ngIf="selectedAppliances.length > 0" class="charts">
+    <h3>Consumo Diário vs Mensal</h3>
+    <canvas baseChart
+            [data]="barChartData"
+            [type]="'bar'">
+    </canvas>
+
+    <h3>Distribuição de Custos</h3>
+    <canvas baseChart
+            [data]="pieChartData"
+            [type]="'doughnut'">
+    </canvas>
+  </div>
+</div>
