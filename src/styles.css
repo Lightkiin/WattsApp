@@ -1,1 +1,17 @@
-/* You can add global styles to this file, and also import other style files */
+/* Reset básico e fundo cinza */
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background-color: #e0e0e0; /* cinza claro */
+    font-family: Arial, Helvetica, sans-serif;
+    color: #222;
+  }
+  
+  /* Garante que o app-root ocupe toda a tela */
+  app-root {
+    display: block;
+    min-height: 100%;
+    background-color: #e0e0e0; /* fundo cinza do app */
+  }
+  
