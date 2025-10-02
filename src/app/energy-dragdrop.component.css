@@ -162,3 +162,38 @@ canvas {
   font-size: 1.1rem;
   color: #00ffff;
 }
+
+.insights-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.insight-card {
+  background: #1e1e2f;
+  color: #fff;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  transition: transform 0.2s;
+}
+
+.insight-card:hover {
+  transform: translateY(-5px);
+}
+
+.insight-card h3 {
+  font-size: 1.1rem;
+  margin-bottom: 8px;
+  color: #4ade80; /* verde destaque */
+}
+
+.insight-card p, .insight-card li {
+  font-size: 0.95rem;
+}
+
+.insight-card ol, .insight-card ul {
+  margin: 0;
+  padding-left: 18px;
+}
