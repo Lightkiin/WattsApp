@@ -1,7 +1,7 @@
 <div class="container">
   <h2>Arraste os eletrodomésticos para o retângulo</h2>
 
-  <!-- Galeria de imagens -->
+  <!-- Galeria -->
   <div class="gallery">
     <div *ngFor="let key of applianceKeys" class="appliance" draggable="true"
          (dragstart)="onDragStart($event,key)">
@@ -34,18 +34,20 @@
     </div>
   </div>
 
-  <!-- Gráficos -->
+  <!-- Gráfico -->
   <div *ngIf="selectedAppliances.length > 0" class="charts">
-    <h3>Consumo Diário vs Mensal</h3>
+    <h3>Consumo de Energia e Custo</h3>
     <canvas baseChart
-            [data]="barChartData"
-            [type]="'bar'">
+    [data]="barChartData"
+    [options]="barChartOptions"
+    [type]="'bar'">
     </canvas>
 
-    <h3>Distribuição de Custos</h3>
-    <canvas baseChart
-            [data]="pieChartData"
-            [type]="'doughnut'">
-    </canvas>
+
+    <!-- Resumo abaixo do gráfico -->
+    <div class="summary">
+      <p><strong>Custo total na semana:</strong> R$ {{ totalWeeklyCost }}</p>
+      <p><strong>Eletrodoméstico que mais gasta:</strong> {{ topSpender }}</p>
+    </div>
   </div>
 </div>

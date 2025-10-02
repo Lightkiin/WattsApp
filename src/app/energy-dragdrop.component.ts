@@ -11,10 +11,8 @@ import { NgChartsModule } from 'ng2-charts';
   styleUrls: ['./energy-dragdrop.component.css']
 })
 export class EnergyDragdropComponent {
-  // Lista de eletrodomésticos adicionados
   selectedAppliances: string[] = [];
 
-  // Configuração de cada eletrodoméstico
   appliances: { [key: string]: { label: string; watt: number; image: string } } = {
     geladeira: { label: 'Geladeira', watt: 150, image: 'assets/appliances/geladeira.png' },
     tv: { label: 'TV', watt: 80, image: 'assets/appliances/tv.png' },
@@ -24,25 +22,45 @@ export class EnergyDragdropComponent {
     lampada: { label: 'Lâmpada LED', watt: 10, image: 'assets/appliances/lampada.png' }
   };
 
-  // Guarda os valores individuais de cada item
   usage: { [key: string]: { powerW: number; hoursPerDay: number; costPerKwh: number } } = {};
 
-  // Gráficos
-  barChartData = {
-    labels: ['Diário', 'Mensal'],
-    datasets: [{ label: 'Consumo (kWh)', data: [0, 0], backgroundColor: ['#36A2EB', '#FF6384'] }]
+  barChartData: any = {
+    labels: [] as string[],
+    datasets: []
   };
 
-  pieChartData = {
-    labels: [] as string[],
-    datasets: [{ data: [] as number[], backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'] }]
+  barChartOptions: any = {
+    responsive: true,
+    plugins: {
+      legend: {
+        labels: {
+          color: '#ffffff', // Legenda branca
+          font: {
+            size: 16,       // Legenda maior
+            weight: 'bold'
+          }
+        }
+      }
+    },
+    scales: {
+      x: {
+        ticks: { color: '#ffffff', font: { size: 14, weight: 'bold' } },
+        grid: { color: '#444' }
+      },
+      y: {
+        ticks: { color: '#ffffff', font: { size: 14, weight: 'bold' } },
+        grid: { color: '#444' }
+      }
+    }
   };
+
+  totalWeeklyCost: number = 0;
+  topSpender: string = '-';
 
   get applianceKeys() {
     return Object.keys(this.appliances);
   }
 
-  // === Drag & Drop ===
   onDragStart(event: DragEvent, key: string) {
     event.dataTransfer?.setData('appliance', key);
   }
@@ -61,30 +79,49 @@ export class EnergyDragdropComponent {
     }
   }
 
-  // === Recalcula todos os gráficos ===
   recalculate() {
-    let totalDaily = 0;
-    let totalMonthly = 0;
-    const pieData: number[] = [];
-    const pieLabels: string[] = [];
+    const labels: string[] = [];
+    const energyData: number[] = [];
+    const costData: number[] = [];
+
+    let weeklyCost = 0;
+    let maxCost = 0;
+    let topKey = '-';
 
     this.selectedAppliances.forEach(key => {
       const { powerW, hoursPerDay, costPerKwh } = this.usage[key];
+
+      // consumo diário em kWh
       const energyDay = (powerW / 1000) * hoursPerDay;
       const energyMonth = energyDay * 30;
-      totalDaily += energyDay;
-      totalMonthly += energyMonth;
+      const costMonth = energyMonth * costPerKwh;
 
-      pieData.push(energyMonth * costPerKwh);
-      pieLabels.push(this.appliances[key].label);
+      // custo semanal acumulando todos os eletrodomésticos
+      const costWeek = (energyDay * 7) * costPerKwh;
+      weeklyCost += costWeek;
+
+      labels.push(this.appliances[key].label);
+      energyData.push(parseFloat(energyMonth.toFixed(2)));
+      costData.push(parseFloat(costMonth.toFixed(2)));
+
+      if (costMonth > maxCost) {
+        maxCost = costMonth;
+        topKey = this.appliances[key].label;
+      }
     });
 
-    this.barChartData.datasets[0].data = [totalDaily, totalMonthly];
-    this.pieChartData.datasets[0].data = pieData;
-    this.pieChartData.labels = pieLabels;
+    this.barChartData = {
+      labels,
+      datasets: [
+        { label: 'Energia (kWh/mês)', data: energyData, backgroundColor: '#36A2EB' },
+        { label: 'Custo (R$/mês)', data: costData, backgroundColor: '#FF6384' }
+      ]
+    };
+
+    this.totalWeeklyCost = parseFloat(weeklyCost.toFixed(2));
+    this.topSpender = topKey;
   }
 
-  // === Remove eletrodoméstico específico ===
   removeAppliance(key: string) {
     this.selectedAppliances = this.selectedAppliances.filter(k => k !== key);
     delete this.usage[key];

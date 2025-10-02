@@ -147,3 +147,18 @@ canvas {
   max-height: 400px;
   padding-bottom: 1rem;
 }
+
+.summary {
+  margin-top: 1.5rem;
+  background-color: #1f1f1f;
+  padding: 1rem;
+  border-radius: 10px;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0, 255, 255, 0.3);
+}
+
+.summary p {
+  margin: 0.5rem 0;
+  font-size: 1.1rem;
+  color: #00ffff;
+}
