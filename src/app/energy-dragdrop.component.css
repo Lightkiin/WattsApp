@@ -1,16 +1,22 @@
-/* Fundo geral */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background-color: #1e1e1e;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #ffffff;
+}
+
 .container {
   max-width: 1200px;
   margin: 2rem auto;
   padding: 2rem;
-  background-color: #1e1e1e; /* Cinza escuro para tema moderno */
+  background-color: #1e1e1e;
   color: #ffffff;
   border-radius: 12px;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-/* Título */
 h2 {
   text-align: center;
   color: #00ffff;
@@ -19,7 +25,6 @@ h2 {
   letter-spacing: 1px;
 }
 
-/* Galeria de eletrodomésticos */
 .gallery {
   display: flex;
   flex-wrap: wrap;
@@ -50,7 +55,6 @@ h2 {
   margin-bottom: 0.5rem;
 }
 
-/* Área de drop */
 .dropzone {
   min-height: 200px;
   background-color: #2b2b2b;
@@ -65,7 +69,6 @@ h2 {
   margin-bottom: 2rem;
   overflow-y: auto;
   max-height: 400px;
-  padding-bottom: 1rem;
 }
 
 .preview-area {
@@ -120,7 +123,6 @@ h2 {
   background-color: #00baba;
 }
 
-/* Gráficos */
 .charts {
   display: flex;
   flex-direction: column;
@@ -134,6 +136,8 @@ h2 {
   text-align: center;
   color: #00ffff;
   margin-bottom: 1rem;
+  font-size: 1.8rem;
+  font-weight: 600;
 }
 
 canvas {
@@ -146,7 +150,6 @@ canvas {
   height: 450px;
 }
 
-/* Insights abaixo do gráfico */
 .insights-container {
   display: flex;
   flex-wrap: wrap;
@@ -161,7 +164,7 @@ canvas {
   color: #fff;
   padding: 12px 16px;
   border-radius: 10px;
-  flex: 1 1 250px; /* largura mínima 250px e cresce */
+  flex: 1 1 250px;
   box-shadow: 0 4px 6px rgba(0,0,0,0.3);
   transition: transform 0.2s;
 }
@@ -171,19 +174,23 @@ canvas {
 }
 
 .insight-card h3 {
-  margin: 0 0 5px 0;
-  font-size: 16px;
-  color: #4ade80; /* verde destaque */
+  margin: 0 0 10px 0;
+  font-size: 1.4rem;
+  color: #4ade80;
+  text-align: center;
 }
 
 .insight-card p,
 .insight-card li {
-  margin: 2px 0;
-  font-size: 14px;
+  margin: 4px 0;
+  font-size: 1.2rem;
+  text-align: center;
 }
 
 .insight-card ol, 
 .insight-card ul {
   margin: 0;
-  padding-left: 18px;
+  padding-left: 0;
+  list-style-position: inside;
+  text-align: center;
 }
