@@ -24,17 +24,35 @@ export class EnergyDragdropComponent {
 
   usage: { [key: string]: { powerW: number; hoursPerDay: number; costPerKwh: number } } = {};
 
+  // Lista de estados e tarifa média
+  states = [
+    { code: 'AC', name: 'Acre' }, { code: 'AL', name: 'Alagoas' }, { code: 'AP', name: 'Amapá' },
+    { code: 'AM', name: 'Amazonas' }, { code: 'BA', name: 'Bahia' }, { code: 'CE', name: 'Ceará' },
+    { code: 'DF', name: 'Distrito Federal' }, { code: 'ES', name: 'Espírito Santo' }, { code: 'GO', name: 'Goiás' },
+    { code: 'MA', name: 'Maranhão' }, { code: 'MT', name: 'Mato Grosso' }, { code: 'MS', name: 'Mato Grosso do Sul' },
+    { code: 'MG', name: 'Minas Gerais' }, { code: 'PA', name: 'Pará' }, { code: 'PB', name: 'Paraíba' },
+    { code: 'PR', name: 'Paraná' }, { code: 'PE', name: 'Pernambuco' }, { code: 'PI', name: 'Piauí' },
+    { code: 'RJ', name: 'Rio de Janeiro' }, { code: 'RN', name: 'Rio Grande do Norte' }, { code: 'RS', name: 'Rio Grande do Sul' },
+    { code: 'RO', name: 'Rondônia' }, { code: 'RR', name: 'Roraima' }, { code: 'SC', name: 'Santa Catarina' },
+    { code: 'SP', name: 'São Paulo' }, { code: 'SE', name: 'Sergipe' }, { code: 'TO', name: 'Tocantins' }
+  ];
+
+  selectedState: string = 'SP';
+
+  tarifas: { [key: string]: number } = {
+    'AC': 0.90, 'AL': 0.86, 'AP': 0.88, 'AM': 0.86, 'BA': 0.85, 'CE': 0.72,
+    'DF': 0.77, 'ES': 0.80, 'GO': 0.78, 'MA': 0.79, 'MT': 0.87, 'MS': 0.87,
+    'MG': 0.71, 'PA': 0.94, 'PB': 0.80, 'PR': 0.75, 'PE': 0.84, 'PI': 0.73,
+    'RJ': 0.87, 'RN': 0.76, 'RS': 0.72, 'RO': 0.89, 'RR': 0.92, 'SC': 0.73,
+    'SP': 0.78, 'SE': 0.86, 'TO': 0.88
+  };
+
   barChartData: any = { labels: [], datasets: [] };
   barChartOptions: any = {
     responsive: true,
     plugins: {
-      legend: {
-        labels: { color: '#ffffff', font: { size: 18, weight: 'bold' } }
-      },
-      tooltip: {
-        bodyFont: { size: 24, weight: 'bold' },
-        titleFont: { size: 20, weight: 'bold' }
-      }
+      legend: { labels: { color: '#ffffff', font: { size: 18, weight: 'bold' } } },
+      tooltip: { bodyFont: { size: 24, weight: 'bold' }, titleFont: { size: 20, weight: 'bold' } }
     },
     scales: {
       x: { ticks: { color: '#ffffff', font: { size: 16, weight: 'bold' } }, grid: { color: '#444' } },
@@ -42,37 +60,34 @@ export class EnergyDragdropComponent {
     }
   };
 
-  // Variáveis para os insights
-  totalWeeklyCost: number = 0;
-  topSpender: string = '-';
-  consumoTotal: number = 0;
-  maisEconomico: { nome: string, valor: number } = { nome: '-', valor: 0 };
-  mediaConsumo: number = 0;
+  totalWeeklyCost = 0; topSpender = '-'; consumoTotal = 0;
+  maisEconomico = { nome: '-', valor: 0 }; mediaConsumo = 0;
   participacao: { nome: string, porcentagem: number }[] = [];
-  mediaDiaria: number = 0;
-  projecaoMensal: number = 0;
-  diferenca: number = 0;
+  mediaDiaria = 0; projecaoMensal = 0; diferenca = 0;
   ranking: { nome: string, valor: number }[] = [];
-  maiorGastao: { nome: string, valor: number } = { nome: '-', valor: 0 };
-  economia: number = 0;
-  consumoPorHora: number = 0;
+  maiorGastao = { nome: '-', valor: 0 }; economia = 0; consumoPorHora = 0;
 
-  get applianceKeys() {
-    return Object.keys(this.appliances);
-  }
+  get applianceKeys() { return Object.keys(this.appliances); }
 
-  onDragStart(event: DragEvent, key: string) {
-    event.dataTransfer?.setData('appliance', key);
-  }
+  onDragStart(event: DragEvent, key: string) { event.dataTransfer?.setData('appliance', key); }
 
   onDrop(event: DragEvent) {
     event.preventDefault();
     const key = event.dataTransfer?.getData('appliance');
     if (key && this.appliances[key] && !this.selectedAppliances.includes(key)) {
       this.selectedAppliances.push(key);
-      this.usage[key] = { powerW: this.appliances[key].watt, hoursPerDay: 1, costPerKwh: 1 };
+      const tarifa = this.tarifas[this.selectedState] || 1;
+      this.usage[key] = { powerW: this.appliances[key].watt, hoursPerDay: 1, costPerKwh: tarifa };
       this.recalculate();
     }
+  }
+
+  updateTarifa() {
+    const tarifa = this.tarifas[this.selectedState] || 1;
+    this.selectedAppliances.forEach(key => {
+      this.usage[key].costPerKwh = tarifa;
+    });
+    this.recalculate();
   }
 
   recalculate() {
@@ -80,21 +95,12 @@ export class EnergyDragdropComponent {
     const energyData: number[] = [];
     const costData: number[] = [];
 
-    let weeklyCost = 0;
-    let maxCost = 0;
-    let topKey = '-';
-
-    let totalEnergyWeek = 0;
-    let minEnergy = Infinity;
-    let minEnergyName = '-';
-    let maxEnergy = 0;
-    let maxEnergyName = '-';
-
+    let weeklyCost = 0, maxCost = 0, topKey = '-';
+    let totalEnergyWeek = 0, minEnergy = Infinity, minEnergyName = '-', maxEnergy = 0, maxEnergyName = '-';
     const tempRanking: { nome: string, valor: number }[] = [];
 
     this.selectedAppliances.forEach(key => {
       const { powerW, hoursPerDay, costPerKwh } = this.usage[key];
-
       const energyDay = (powerW / 1000) * hoursPerDay;
       const energyMonth = energyDay * 30;
       const costMonth = energyMonth * costPerKwh;
@@ -108,14 +114,12 @@ export class EnergyDragdropComponent {
       costData.push(parseFloat(costMonth.toFixed(2)));
 
       if (costMonth > maxCost) { maxCost = costMonth; topKey = this.appliances[key].label; }
-
       if (energyDay * 7 < minEnergy) { minEnergy = energyDay * 7; minEnergyName = this.appliances[key].label; }
       if (energyDay * 7 > maxEnergy) { maxEnergy = energyDay * 7; maxEnergyName = this.appliances[key].label; }
 
       tempRanking.push({ nome: this.appliances[key].label, valor: parseFloat((energyDay*7).toFixed(2)) });
     });
 
-    // Bar Chart
     this.barChartData = {
       labels,
       datasets: [
@@ -124,10 +128,8 @@ export class EnergyDragdropComponent {
       ]
     };
 
-    // Insights
     this.totalWeeklyCost = parseFloat(weeklyCost.toFixed(2));
     this.topSpender = topKey;
-
     this.consumoTotal = parseFloat(totalEnergyWeek.toFixed(2));
     this.maisEconomico = { nome: minEnergyName, valor: parseFloat(minEnergy.toFixed(2)) };
     this.mediaConsumo = parseFloat((totalEnergyWeek / this.selectedAppliances.length).toFixed(2));
@@ -140,7 +142,7 @@ export class EnergyDragdropComponent {
     this.diferenca = parseFloat((maxCost - (weeklyCost - maxCost)).toFixed(2));
     this.ranking = tempRanking.sort((a,b) => b.valor - a.valor);
     this.maiorGastao = { nome: maxEnergyName, valor: parseFloat(maxEnergy.toFixed(2)) };
-    this.economia = parseFloat((maxEnergy / 7).toFixed(2)); // economia de 1h
+    this.economia = parseFloat((maxEnergy / 7).toFixed(2));
     this.consumoPorHora = parseFloat((totalEnergyWeek / this.selectedAppliances.reduce((a,b)=>a+this.usage[b].hoursPerDay,0)).toFixed(2));
   }
 

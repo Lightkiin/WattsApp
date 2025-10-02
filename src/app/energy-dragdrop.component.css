@@ -106,6 +106,13 @@ h2 {
   color: #00ffff;
 }
 
+/* Remove setinhas do input number */
+.preview-area input[type=number]::-webkit-inner-spin-button,
+.preview-area input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
 .preview-area button {
   margin-top: 0.5rem;
   width: 100%;
@@ -193,4 +200,21 @@ canvas {
   padding-left: 0;
   list-style-position: inside;
   text-align: center;
+}
+
+.state-selector {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 1.5rem;
+}
+
+.state-selector select {
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  border: none;
+  background-color: #2b2b2b;
+  color: #00ffff;
+  font-weight: bold;
 }

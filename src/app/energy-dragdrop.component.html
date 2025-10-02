@@ -1,6 +1,14 @@
 <div class="container">
   <h2>Arraste os eletrodomésticos para o retângulo</h2>
 
+  <!-- Dropdown de Estados -->
+  <div class="state-selector">
+    <label for="state">Selecione o Estado:</label>
+    <select id="state" [(ngModel)]="selectedState" (change)="updateTarifa()">
+      <option *ngFor="let state of states" [value]="state.code">{{ state.name }}</option>
+    </select>
+  </div>
+
   <!-- Galeria -->
   <div class="gallery">
     <div *ngFor="let key of applianceKeys" class="appliance" draggable="true"
@@ -34,7 +42,7 @@
     </div>
   </div>
 
-  <!-- Gráfico -->
+  <!-- Gráfico e insights -->
   <div *ngIf="selectedAppliances.length > 0" class="charts">
     <h3>Consumo de Energia e Custo</h3>
     <canvas baseChart
@@ -44,65 +52,51 @@
       style="width: 100%; max-width: 900px; height: 450px;">
     </canvas>
 
-    <!-- Painel de insights abaixo do gráfico -->
     <div class="insights-container">
-
       <div class="insight-card">
         <h3>🔋 Consumo total</h3>
         <p>{{ consumoTotal }} kWh/semana</p>
       </div>
-
       <div class="insight-card">
         <h3>💡 Mais econômico</h3>
         <p>{{ maisEconomico.nome }} - {{ maisEconomico.valor }} kWh</p>
       </div>
-
       <div class="insight-card">
         <h3>📉 Média por aparelho</h3>
         <p>{{ mediaConsumo }} kWh</p>
       </div>
-
       <div class="insight-card">
         <h3>📊 Participação</h3>
         <ul>
-          <li *ngFor="let item of participacao">
-            {{ item.nome }}: {{ item.porcentagem }}%
-          </li>
+          <li *ngFor="let item of participacao">{{ item.nome }}: {{ item.porcentagem }}%</li>
         </ul>
       </div>
-
       <div class="insight-card">
         <h3>💰 Média diária</h3>
         <p>R$ {{ mediaDiaria }}</p>
       </div>
-
       <div class="insight-card">
         <h3>📆 Projeção mensal</h3>
         <p>R$ {{ projecaoMensal }}</p>
       </div>
-
       <div class="insight-card">
         <h3>⚖️ Diferença</h3>
         <p>R$ {{ diferenca }}</p>
       </div>
-
       <div class="insight-card">
         <h3>🏆 Ranking</h3>
         <ol>
           <li *ngFor="let item of ranking">{{ item.nome }} - {{ item.valor }} kWh</li>
         </ol>
       </div>
-
       <div class="insight-card">
         <h3>💡 Economia possível</h3>
         <p>Desligar {{ maiorGastao.nome }} 1h → economiza {{ economia }} kWh</p>
       </div>
-
       <div class="insight-card">
         <h3>⏱️ Consumo/hora</h3>
         <p>{{ consumoPorHora }} kWh</p>
       </div>
-
     </div>
   </div>
 </div>
