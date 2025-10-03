@@ -1,7 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NgChartsModule } from 'ng2-charts';
+import { HttpClient } from '@angular/common/http';
 
 @Component({
   selector: 'app-energy-dragdrop',
@@ -11,6 +12,8 @@ import { NgChartsModule } from 'ng2-charts';
   styleUrls: ['./energy-dragdrop.component.css']
 })
 export class EnergyDragdropComponent {
+  private http = inject(HttpClient);
+  private apiUrl = 'http://127.0.0.1:5000/calcular';
   selectedAppliances: string[] = [];
 
   appliances: { [key: string]: { label: string; watt: number; image: string } } = {
@@ -104,97 +107,57 @@ export class EnergyDragdropComponent {
   }
 
   recalculate() {
-    let allAppliancesData: any[] = [];
-    
-    let totalEnergyWeek = 0;
-    
-    this.selectedAppliances.forEach(key => {
-      const { powerW, minutesPerDay, quantity } = this.usage[key];
-      const hoursPerDay = minutesPerDay / 60;
-      
-      const energyDay = (powerW / 1000) * hoursPerDay * quantity;
-      const energyWeek = energyDay * 7;
-      const energyMonth = energyDay * 30;
-      const costMonth = energyMonth * this.globalTariff;
-
-      totalEnergyWeek += energyWeek;
-
-      allAppliancesData.push({
-        key,
-        label: this.appliances[key].label,
-        energyMonth: parseFloat(energyMonth.toFixed(2)),
-        costMonth: parseFloat(costMonth.toFixed(2)),
-        energyWeek: parseFloat(energyWeek.toFixed(2))
-      });
-    });
-
-    // Ordenar do maior para o menor consumo de energia mensal
-    allAppliancesData.sort((a, b) => b.energyMonth - a.energyMonth);
-
-    const labels = allAppliancesData.map(d => d.label);
-    const energyData = allAppliancesData.map(d => d.energyMonth);
-    const costData = allAppliancesData.map(d => d.costMonth);
-    const weeklyEnergyValues = allAppliancesData.map(d => d.energyWeek);
-
-    this.barChartData = {
-      labels,
-      datasets: [
-        { label: 'Energia (kWh/mês)', data: energyData, backgroundColor: '#36A2EB' },
-        { label: 'Custo (R$/mês)', data: costData, backgroundColor: '#FF6384' }
-      ]
-    };
-    
-    // --- INSIGHTS ---
-    const n = allAppliancesData.length;
-    this.consumoTotal = parseFloat(totalEnergyWeek.toFixed(2));
-
-    if (n > 0) {
-      this.maisEconomico = { nome: allAppliancesData[n - 1].label, valor: allAppliancesData[n-1].energyWeek };
-      this.maiorGastao = { nome: allAppliancesData[0].label, valor: allAppliancesData[0].energyWeek };
-      this.ranking = allAppliancesData.map(d => ({ nome: d.label, valor: d.energyWeek }));
-      this.mediaConsumo = parseFloat((totalEnergyWeek / n).toFixed(2));
-      this.participacao = allAppliancesData.map(d => ({
-          nome: d.label,
-          porcentagem: totalEnergyWeek > 0 ? parseFloat(((d.energyWeek / totalEnergyWeek) * 100).toFixed(1)) : 0
-      }));
-      this.mediaDiaria = parseFloat(((totalEnergyWeek * this.globalTariff) / 7).toFixed(2));
-      this.projecaoMensal = parseFloat((totalEnergyWeek * this.globalTariff * 4.28).toFixed(2));
-
-      if (n > 1) {
-        const mean = this.mediaConsumo;
-        const variance = weeklyEnergyValues.reduce((acc, val) => acc + Math.pow(val - mean, 2), 0) / (n - 1);
-        this.desvioPadraoConsumo = parseFloat(Math.sqrt(variance).toFixed(2));
-
-        const dailyCostValues = weeklyEnergyValues.map(e => (e / 7) * this.globalTariff);
-        const dailyCostMean = this.mediaDiaria;
-        const dailyCostVariance = dailyCostValues.reduce((acc, val) => acc + Math.pow(val - dailyCostMean, 2), 0) / (n - 1);
-        const dailyCostStdDev = Math.sqrt(dailyCostVariance);
-        const marginOfError = 1.96 * (dailyCostStdDev / Math.sqrt(n));
-        const monthlyMarginOfError = marginOfError * 30;
-
-        this.projecaoMensalMin = parseFloat(Math.max(0, this.projecaoMensal - monthlyMarginOfError).toFixed(2));
-        this.projecaoMensalMax = parseFloat((this.projecaoMensal + monthlyMarginOfError).toFixed(2));
-      } else {
-        this.desvioPadraoConsumo = 0;
-        this.projecaoMensalMin = this.projecaoMensal;
-        this.projecaoMensalMax = this.projecaoMensal;
-      }
-    } else {
-        // Resetar valores quando não há aparelhos
-        this.consumoTotal = 0;
-        this.maisEconomico = { nome: '-', valor: 0 };
-        this.maiorGastao = { nome: '-', valor: 0 };
-        this.ranking = [];
-        this.mediaConsumo = 0;
-        this.desvioPadraoConsumo = 0;
-        this.participacao = [];
-        this.mediaDiaria = 0;
-        this.projecaoMensal = 0;
-        this.projecaoMensalMin = 0;
-        this.projecaoMensalMax = 0;
+    if (this.selectedAppliances.length === 0) {
+      this.resetValues(); 
+      this.generateSavingsTips();
+      return;
     }
 
-    this.generateSavingsTips();
+    // Envia ao backend
+    const payload = {
+      tariff: this.globalTariff,
+      appliances: this.selectedAppliances.map(key => ({
+        label: this.appliances[key].label,
+        powerW: this.usage[key].powerW,
+        minutesPerDay: this.usage[key].minutesPerDay,
+        quantity: this.usage[key].quantity
+      }))
+    };
+
+    // Faz a chamada POST para o backend Python
+    this.http.post<any>(this.apiUrl, payload).subscribe(response => {
+      // Atualiza as propriedades do componente com a resposta do backend
+      this.consumoTotal = response.consumoTotal;
+      this.maisEconomico = response.maisEconomico;
+      this.mediaConsumo = response.mediaConsumo;
+      this.desvioPadraoConsumo = response.desvioPadraoConsumo;
+      this.participacao = response.participacao;
+      this.mediaDiaria = response.mediaDiaria;
+      this.projecaoMensal = response.projecaoMensal;
+      this.projecaoMensalMin = response.projecaoMensalMin;
+      this.projecaoMensalMax = response.projecaoMensalMax;
+      this.ranking = response.ranking;
+      this.maiorGastao = response.maiorGastao;
+      this.barChartData = response.barChartData;
+      
+      this.generateSavingsTips();
+    });
+  }
+
+  // Crie esta função para limpar os cards quando não houver aparelhos
+  private resetValues() {
+    this.consumoTotal = 0;
+    this.maisEconomico = { nome: '-', valor: 0 };
+    this.maiorGastao = { nome: '-', valor: 0 };
+    this.ranking = [];
+    this.mediaConsumo = 0;
+    this.desvioPadraoConsumo = 0;
+    this.participacao = [];
+    this.mediaDiaria = 0;
+    this.projecaoMensal = 0;
+    this.projecaoMensalMin = 0;
+    this.projecaoMensalMax = 0;
+    this.barChartData = { labels: [], datasets: [] };
   }
 
   removeAppliance(key: string) {
