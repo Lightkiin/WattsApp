@@ -9,6 +9,11 @@
     </select>
   </div>
 
+  <!-- Texto básico -->
+  <div class="state-selector">
+    <p class="simple-text">*lembrando que isso é uma estimativa, para melhor precisão confirme a tarifa da sua região</p>
+  </div>
+
   <!-- Galeria -->
   <div class="gallery">
     <div *ngFor="let key of applianceKeys" class="appliance" draggable="true"
@@ -96,6 +101,24 @@
       <div class="insight-card">
         <h3>⏱️ Consumo/hora</h3>
         <p>{{ consumoPorHora }} kWh</p>
+      </div>
+      <div class="insight-card">
+        <h3>📊 Variabilidade (Desvio Padrão)</h3>
+        <p>{{ desvioPadraoConsumo }} kWh</p>
+        <small>Indica a dispersão do consumo entre os aparelhos. Um valor alto significa que alguns aparelhos gastam muito mais que a média.</small>
+      </div>
+      <div class="insight-card">
+        <h3>📆 Projeção Mensal (Estimativa)</h3>
+        <p>R$ {{ projecaoMensal }}</p>
+        <small *ngIf="selectedAppliances.length > 1">
+          Com 95% de confiança, seu gasto ficará entre <strong>R$ {{ projecaoMensalMin }}</strong> e <strong>R$ {{ projecaoMensalMax }}</strong>.
+        </small>
+      </div>
+      <div *ngIf="savingsTips.length > 0" class="tips-container">
+        <h3>💡 Dicas de Economia Personalizadas</h3>
+        <ul>
+          <li *ngFor="let tip of savingsTips">{{ tip }}</li>
+        </ul>
       </div>
     </div>
   </div>
