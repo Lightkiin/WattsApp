@@ -22,9 +22,12 @@ export class EnergyDragdropComponent {
     lampada: { label: 'Lâmpada LED', watt: 10, image: 'assets/appliances/lampada.png' }
   };
 
-  usage: { [key: string]: { powerW: number; hoursPerDay: number; costPerKwh: number } } = {};
+  // Estrutura de 'usage' atualizada para incluir quantidade e minutos
+  usage: { [key: string]: { powerW: number; minutesPerDay: number; quantity: number } } = {};
+  
+  // Tarifa global
+  globalTariff: number = 0.78;
 
-  // Lista de estados e tarifa média
   states = [
     { code: 'AC', name: 'Acre' }, { code: 'AL', name: 'Alagoas' }, { code: 'AP', name: 'Amapá' },
     { code: 'AM', name: 'Amazonas' }, { code: 'BA', name: 'Bahia' }, { code: 'CE', name: 'Ceará' },
@@ -60,12 +63,18 @@ export class EnergyDragdropComponent {
     }
   };
 
-  totalWeeklyCost = 0; topSpender = '-'; consumoTotal = 0;
-  maisEconomico = { nome: '-', valor: 0 }; mediaConsumo = 0; desvioPadraoConsumo = 0;
+  consumoTotal = 0;
+  maisEconomico = { nome: '-', valor: 0 };
+  mediaConsumo = 0;
+  desvioPadraoConsumo = 0;
   participacao: { nome: string, porcentagem: number }[] = [];
-  mediaDiaria = 0; projecaoMensal = 0; diferenca = 0; projecaoMensalMin = 0; projecaoMensalMax = 0;
+  mediaDiaria = 0;
+  projecaoMensal = 0;
+  projecaoMensalMin = 0;
+  projecaoMensalMax = 0;
   ranking: { nome: string, valor: number }[] = [];
-  maiorGastao = { nome: '-', valor: 0 }; economia = 0; consumoPorHora = 0; savingsTips: string[] = [];
+  maiorGastao = { nome: '-', valor: 0 };
+  savingsTips: string[] = [];
 
   get applianceKeys() { return Object.keys(this.appliances); }
 
@@ -76,51 +85,56 @@ export class EnergyDragdropComponent {
     const key = event.dataTransfer?.getData('appliance');
     if (key && this.appliances[key] && !this.selectedAppliances.includes(key)) {
       this.selectedAppliances.push(key);
-      const tarifa = this.tarifas[this.selectedState] || 1;
-      this.usage[key] = { powerW: this.appliances[key].watt, hoursPerDay: 1, costPerKwh: tarifa };
+      this.usage[key] = { powerW: this.appliances[key].watt, minutesPerDay: 60, quantity: 1 };
       this.recalculate();
     }
   }
 
-  updateTarifa() {
-    const tarifa = this.tarifas[this.selectedState] || 1;
-    this.selectedAppliances.forEach(key => {
-      this.usage[key].costPerKwh = tarifa;
-    });
+  updateTariffFromState() {
+    this.globalTariff = this.tarifas[this.selectedState] || 0.78;
     this.recalculate();
+  }
+  
+  // Função para converter minutos para uma string de horas
+  getMinutesAsHours(minutes: number): string {
+    if (minutes === null || isNaN(minutes)) {
+      return '0.00';
+    }
+    return (minutes / 60).toFixed(2);
   }
 
   recalculate() {
-    const labels: string[] = [];
-    const energyData: number[] = [];
-    const costData: number[] = [];
-    const weeklyEnergyValues: number[] = []; // Array para guardar os consumos semanais
-
-    let weeklyCost = 0, maxCost = 0, topKey = '-';
-    let totalEnergyWeek = 0, minEnergy = Infinity, minEnergyName = '-', maxEnergy = 0, maxEnergyName = '-';
-    const tempRanking: { nome: string, valor: number }[] = [];
-
+    let allAppliancesData: any[] = [];
+    
+    let totalEnergyWeek = 0;
+    
     this.selectedAppliances.forEach(key => {
-      const { powerW, hoursPerDay, costPerKwh } = this.usage[key];
-      const energyDay = (powerW / 1000) * hoursPerDay;
+      const { powerW, minutesPerDay, quantity } = this.usage[key];
+      const hoursPerDay = minutesPerDay / 60;
+      
+      const energyDay = (powerW / 1000) * hoursPerDay * quantity;
+      const energyWeek = energyDay * 7;
       const energyMonth = energyDay * 30;
-      const costMonth = energyMonth * costPerKwh;
-      const costWeek = (energyDay * 7) * costPerKwh;
+      const costMonth = energyMonth * this.globalTariff;
 
-      weeklyCost += costWeek;
-      totalEnergyWeek += energyDay * 7;
-      weeklyEnergyValues.push(energyDay * 7); // Adiciona o consumo ao array
+      totalEnergyWeek += energyWeek;
 
-      labels.push(this.appliances[key].label);
-      energyData.push(parseFloat(energyMonth.toFixed(2)));
-      costData.push(parseFloat(costMonth.toFixed(2)));
-
-      if (costMonth > maxCost) { maxCost = costMonth; topKey = this.appliances[key].label; }
-      if (energyDay * 7 < minEnergy) { minEnergy = energyDay * 7; minEnergyName = this.appliances[key].label; }
-      if (energyDay * 7 > maxEnergy) { maxEnergy = energyDay * 7; maxEnergyName = this.appliances[key].label; }
-
-      tempRanking.push({ nome: this.appliances[key].label, valor: parseFloat((energyDay*7).toFixed(2)) });
+      allAppliancesData.push({
+        key,
+        label: this.appliances[key].label,
+        energyMonth: parseFloat(energyMonth.toFixed(2)),
+        costMonth: parseFloat(costMonth.toFixed(2)),
+        energyWeek: parseFloat(energyWeek.toFixed(2))
+      });
     });
+
+    // Ordenar do maior para o menor consumo de energia mensal
+    allAppliancesData.sort((a, b) => b.energyMonth - a.energyMonth);
+
+    const labels = allAppliancesData.map(d => d.label);
+    const energyData = allAppliancesData.map(d => d.energyMonth);
+    const costData = allAppliancesData.map(d => d.costMonth);
+    const weeklyEnergyValues = allAppliancesData.map(d => d.energyWeek);
 
     this.barChartData = {
       labels,
@@ -129,50 +143,57 @@ export class EnergyDragdropComponent {
         { label: 'Custo (R$/mês)', data: costData, backgroundColor: '#FF6384' }
       ]
     };
-
-    const n = this.selectedAppliances.length;
-    this.totalWeeklyCost = parseFloat(weeklyCost.toFixed(2));
-    this.topSpender = topKey;
-    this.consumoTotal = parseFloat(totalEnergyWeek.toFixed(2));
-    this.maisEconomico = { nome: minEnergyName, valor: parseFloat(minEnergy.toFixed(2)) };
-     // Média (Medida de Tendência Central)
-    this.mediaConsumo = n > 0 ? parseFloat((totalEnergyWeek / n).toFixed(2)) : 0;
     
-    // Desvio Padrão (Medida de Variabilidade)
-    if (n > 1) {
-      const mean = this.mediaConsumo;
-      const variance = weeklyEnergyValues.reduce((acc, val) => acc + Math.pow(val - mean, 2), 0) / (n - 1);
-      this.desvioPadraoConsumo = parseFloat(Math.sqrt(variance).toFixed(2));
-      // --- CÁLCULO DO INTERVALO DE CONFIANÇA (95%) ---
-      // Z-score para 95% de confiança é 1.96
-      // Margem de Erro = Z * (Desvio Padrão / sqrt(n))
-      const dailyCostValues = weeklyEnergyValues.map(e => (e/7) * this.tarifas[this.selectedState]);
-      const dailyCostMean = this.mediaDiaria;
-      const dailyCostVariance = dailyCostValues.reduce((acc, val) => acc + Math.pow(val - dailyCostMean, 2), 0) / (n - 1);
-      const dailyCostStdDev = Math.sqrt(dailyCostVariance);
+    // --- INSIGHTS ---
+    const n = allAppliancesData.length;
+    this.consumoTotal = parseFloat(totalEnergyWeek.toFixed(2));
 
-      const marginOfError = 1.96 * (dailyCostStdDev / Math.sqrt(n));
-      const monthlyMarginOfError = marginOfError * 30; // Projetando a margem de erro para o mês
+    if (n > 0) {
+      this.maisEconomico = { nome: allAppliancesData[n - 1].label, valor: allAppliancesData[n-1].energyWeek };
+      this.maiorGastao = { nome: allAppliancesData[0].label, valor: allAppliancesData[0].energyWeek };
+      this.ranking = allAppliancesData.map(d => ({ nome: d.label, valor: d.energyWeek }));
+      this.mediaConsumo = parseFloat((totalEnergyWeek / n).toFixed(2));
+      this.participacao = allAppliancesData.map(d => ({
+          nome: d.label,
+          porcentagem: totalEnergyWeek > 0 ? parseFloat(((d.energyWeek / totalEnergyWeek) * 100).toFixed(1)) : 0
+      }));
+      this.mediaDiaria = parseFloat(((totalEnergyWeek * this.globalTariff) / 7).toFixed(2));
+      this.projecaoMensal = parseFloat((totalEnergyWeek * this.globalTariff * 4.28).toFixed(2));
 
-      this.projecaoMensalMin = parseFloat(Math.max(0, this.projecaoMensal - monthlyMarginOfError).toFixed(2));
-      this.projecaoMensalMax = parseFloat((this.projecaoMensal + monthlyMarginOfError).toFixed(2));
+      if (n > 1) {
+        const mean = this.mediaConsumo;
+        const variance = weeklyEnergyValues.reduce((acc, val) => acc + Math.pow(val - mean, 2), 0) / (n - 1);
+        this.desvioPadraoConsumo = parseFloat(Math.sqrt(variance).toFixed(2));
+
+        const dailyCostValues = weeklyEnergyValues.map(e => (e / 7) * this.globalTariff);
+        const dailyCostMean = this.mediaDiaria;
+        const dailyCostVariance = dailyCostValues.reduce((acc, val) => acc + Math.pow(val - dailyCostMean, 2), 0) / (n - 1);
+        const dailyCostStdDev = Math.sqrt(dailyCostVariance);
+        const marginOfError = 1.96 * (dailyCostStdDev / Math.sqrt(n));
+        const monthlyMarginOfError = marginOfError * 30;
+
+        this.projecaoMensalMin = parseFloat(Math.max(0, this.projecaoMensal - monthlyMarginOfError).toFixed(2));
+        this.projecaoMensalMax = parseFloat((this.projecaoMensal + monthlyMarginOfError).toFixed(2));
+      } else {
+        this.desvioPadraoConsumo = 0;
+        this.projecaoMensalMin = this.projecaoMensal;
+        this.projecaoMensalMax = this.projecaoMensal;
+      }
     } else {
-      this.desvioPadraoConsumo = 0;
-      this.projecaoMensalMin = this.projecaoMensal;
-      this.projecaoMensalMax = this.projecaoMensal;
+        // Resetar valores quando não há aparelhos
+        this.consumoTotal = 0;
+        this.maisEconomico = { nome: '-', valor: 0 };
+        this.maiorGastao = { nome: '-', valor: 0 };
+        this.ranking = [];
+        this.mediaConsumo = 0;
+        this.desvioPadraoConsumo = 0;
+        this.participacao = [];
+        this.mediaDiaria = 0;
+        this.projecaoMensal = 0;
+        this.projecaoMensalMin = 0;
+        this.projecaoMensalMax = 0;
     }
-    this.mediaConsumo = parseFloat((totalEnergyWeek / this.selectedAppliances.length).toFixed(2));
-    this.participacao = tempRanking.map(item => ({
-      nome: item.nome,
-      porcentagem: parseFloat(((item.valor / totalEnergyWeek) * 100).toFixed(1))
-    }));
-    this.mediaDiaria = n > 0 ? parseFloat((weeklyCost / 7).toFixed(2)) : 0;
-    this.projecaoMensal = parseFloat((weeklyCost * 4.28).toFixed(2)); // Usando 4.28 semanas/mês para mais precisão
-    this.diferenca = parseFloat((maxCost - (weeklyCost - maxCost)).toFixed(2));
-    this.ranking = tempRanking.sort((a,b) => b.valor - a.valor);
-    this.maiorGastao = { nome: maxEnergyName, valor: parseFloat(maxEnergy.toFixed(2)) };
-    this.economia = parseFloat((maxEnergy / 7).toFixed(2));
-    this.consumoPorHora = parseFloat((totalEnergyWeek / this.selectedAppliances.reduce((a,b)=>a+this.usage[b].hoursPerDay,0)).toFixed(2));
+
     this.generateSavingsTips();
   }
 
@@ -186,87 +207,79 @@ export class EnergyDragdropComponent {
     this.savingsTips = [];
     if (this.selectedAppliances.length === 0) return;
 
-    // Dica genérica sobre o maior consumidor (mantida e aprimorada)
     const topSpenderKey = this.ranking.length > 0 ? this.selectedAppliances.find(k => this.appliances[k].label === this.ranking[0].nome) : undefined;
     if (topSpenderKey) {
         const applianceUsage = this.usage[topSpenderKey];
         const applianceInfo = this.appliances[topSpenderKey];
-        if (applianceUsage.hoursPerDay > 1 && applianceInfo.label !== 'Geladeira') {
+        if (applianceUsage.minutesPerDay > 60 && applianceInfo.label !== 'Geladeira') {
             const dailySavingKwh = (applianceUsage.powerW / 1000) * 0.5; // Redução de 30 min
-            const monthlySavingBRL = dailySavingKwh * 30 * applianceUsage.costPerKwh;
+            const monthlySavingBRL = dailySavingKwh * 30 * this.globalTariff;
             if (monthlySavingBRL > 1) {
-                this.savingsTips.push(`Seu maior vilão é ${applianceInfo.label}. Reduzir seu uso em 30 minutos por dia pode economizar cerca de R$ ${monthlySavingBRL.toFixed(2)} por mês.`);
+                this.savingsTips.push(`Seu maior vilão é '${applianceInfo.label}'. Reduzir seu uso em 30 minutos por dia pode economizar cerca de R$ ${monthlySavingBRL.toFixed(2)} por mês.`);
             }
         }
     }
 
-    // Dicas específicas por aparelho
     this.selectedAppliances.forEach(key => {
         const applianceUsage = this.usage[key];
-        const applianceInfo = this.appliances[key];
-        const monthlyCost = (applianceUsage.powerW / 1000) * applianceUsage.hoursPerDay * 30 * applianceUsage.costPerKwh;
+        const monthlyCost = (applianceUsage.powerW / 1000) * (applianceUsage.minutesPerDay / 60) * applianceUsage.quantity * 30 * this.globalTariff;
 
         switch(key) {
             case 'chuveiro':
                 const reductionMinutes = 10;
-                if (applianceUsage.hoursPerDay * 60 > reductionMinutes) { // Se o uso diário for maior que a redução proposta
-                    const dailySavingKwh = (applianceUsage.powerW / 1000) * (reductionMinutes / 60);
-                    const monthlySavingBRL = dailySavingKwh * 30 * applianceUsage.costPerKwh;
+                if (applianceUsage.minutesPerDay > reductionMinutes) {
+                    const dailySavingKwh = (applianceUsage.powerW / 1000) * (reductionMinutes / 60) * applianceUsage.quantity;
+                    const monthlySavingBRL = dailySavingKwh * 30 * this.globalTariff;
                     this.savingsTips.push(`O chuveiro elétrico é um grande consumidor. Reduzir ${reductionMinutes} minutos do banho diário pode gerar uma economia de R$ ${monthlySavingBRL.toFixed(2)} por mês.`);
                 }
                 break;
 
             case 'ar':
-                if (applianceUsage.hoursPerDay > 2) {
-                    // Aumentar 1°C no ar pode economizar de 6 a 8%. Usaremos 7%.
+                if (applianceUsage.minutesPerDay > 120) {
                     const monthlySavingBRL = monthlyCost * 0.07;
-                    this.savingsTips.push(`Para o ar-condicionado, aumentar a temperatura em apenas 1°C pode reduzir o consumo em até 8%. Isso representaria uma economia de R$ ${monthlySavingBRL.toFixed(2)} por mês.`);
+                    this.savingsTips.push(`Para o ar-condicionado, aumentar a temperatura em 1°C pode economizar ~7% de energia. Isso representaria R$ ${monthlySavingBRL.toFixed(2)} a menos na sua conta.`);
                 }
                 break;
 
             case 'geladeira':
-                // A geladeira fica ligada 24h, mas o motor não. A média de uso do motor é ~8h/dia.
-                // Dica focada na troca por um modelo mais eficiente.
-                const modernFridgeWatts = 50; // Potência de uma geladeira moderna (A+++)
-                if (applianceUsage.powerW > modernFridgeWatts + 50) { // Se a geladeira for significativamente mais gastona
+                const modernFridgeWatts = 50;
+                if (applianceUsage.powerW > modernFridgeWatts + 50) {
                     const currentMonthlyKwh = (applianceUsage.powerW / 1000) * 8 * 30; // 8h de motor por dia
                     const modernMonthlyKwh = (modernFridgeWatts / 1000) * 8 * 30;
-                    const monthlySavingBRL = (currentMonthlyKwh - modernMonthlyKwh) * applianceUsage.costPerKwh;
+                    const monthlySavingBRL = (currentMonthlyKwh - modernMonthlyKwh) * this.globalTariff;
                     if (monthlySavingBRL > 10) {
-                      this.savingsTips.push(`Sua geladeira consome bastante. Avalie a possibilidade de trocá-la por um modelo A+++, que pode economizar até R$ ${monthlySavingBRL.toFixed(2)} por mês.`);
+                      this.savingsTips.push(`Sua geladeira consome bastante. Avalie a troca por um modelo A+++, o que pode economizar até R$ ${monthlySavingBRL.toFixed(2)} por mês.`);
                     }
                 }
                 break;
 
             case 'tv':
-                // Dica sobre o modo standby
                 const standbyWatts = 2;
-                const standbyHours = 24 - applianceUsage.hoursPerDay;
+                const standbyHours = 24 - (applianceUsage.minutesPerDay / 60);
                 if (standbyHours > 8) {
-                    const standbyMonthlyKwh = (standbyWatts / 1000) * standbyHours * 30;
-                    const monthlySavingBRL = standbyMonthlyKwh * applianceUsage.costPerKwh;
+                    const standbyMonthlyKwh = (standbyWatts / 1000) * standbyHours * 30 * applianceUsage.quantity;
+                    const monthlySavingBRL = standbyMonthlyKwh * this.globalTariff;
                     if (monthlySavingBRL > 1.5) {
-                        this.savingsTips.push(`Desligar a TV da tomada em vez de deixá-la em standby pode economizar cerca de R$ ${monthlySavingBRL.toFixed(2)} por mês em "energia fantasma".`);
+                        this.savingsTips.push(`Desligar a(s) TV(s) da tomada pode economizar cerca de R$ ${monthlySavingBRL.toFixed(2)} por mês em "energia fantasma".`);
                     }
                 }
                 break;
 
             case 'microondas':
-                // Dica sobre o relógio (energia fantasma)
                 const clockWatts = 4;
-                const clockHours = 24 - applianceUsage.hoursPerDay;
+                const clockHours = 24 - (applianceUsage.minutesPerDay / 60);
                 const clockMonthlyKwh = (clockWatts / 1000) * clockHours * 30;
-                const monthlySavingBRL = clockMonthlyKwh * applianceUsage.costPerKwh;
+                const monthlySavingBRL = clockMonthlyKwh * this.globalTariff;
                  if (monthlySavingBRL > 1) {
-                    this.savingsTips.push(`O relógio do micro-ondas também gasta energia. Desligá-lo da tomada quando não estiver em uso pode economizar R$ ${monthlySavingBRL.toFixed(2)} por mês.`);
+                    this.savingsTips.push(`O relógio do micro-ondas também gasta. Desligá-lo da tomada pode economizar R$ ${monthlySavingBRL.toFixed(2)} por mês.`);
                 }
                 break;
             
             case 'lampada':
-                if(applianceUsage.hoursPerDay > 4) {
-                    const dailySavingKwh = (applianceUsage.powerW / 1000) * 1; // 1 hora a menos
-                    const monthlySavingBRL = dailySavingKwh * 30 * applianceUsage.costPerKwh;
-                    this.savingsTips.push(`Apesar do baixo consumo, cada pequena economia conta! Desligar uma lâmpada LED por 1 hora a mais todos os dias pode economizar R$ ${monthlySavingBRL.toFixed(2)} por mês.`);
+                if(applianceUsage.minutesPerDay > 240) {
+                    const dailySavingKwh = (applianceUsage.powerW / 1000) * 1 * applianceUsage.quantity; // 1 hora a menos
+                    const monthlySavingBRL = dailySavingKwh * 30 * this.globalTariff;
+                    this.savingsTips.push(`Cada pequena economia conta! Desligar a(s) lâmpada(s) por 1 hora a mais todos os dias pode economizar R$ ${monthlySavingBRL.toFixed(2)} por mês.`);
                 }
                 break;
         }
