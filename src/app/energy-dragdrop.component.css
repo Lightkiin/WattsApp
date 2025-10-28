@@ -1,9 +1,10 @@
-html, body {
+html,
+body {
   margin: 0;
   padding: 0;
   height: 100%;
   background-color: #1e1e1e;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   color: #ffffff;
 }
 
@@ -53,6 +54,16 @@ h2 {
   height: 80px;
   object-fit: contain;
   margin-bottom: 0.5rem;
+}
+
+.add-appliance-button {
+  cursor: pointer;
+  background: #2a2a2a;
+}
+
+.add-appliance-button:hover {
+  transform: translateY(-5px) scale(1.05);
+  box-shadow: 0 8px 20px rgba(0, 255, 255, 0.6);
 }
 
 .dropzone {
@@ -107,8 +118,8 @@ h2 {
 }
 
 /* Remove setinhas do input number */
-.preview-area input[type=number]::-webkit-inner-spin-button,
-.preview-area input[type=number]::-webkit-outer-spin-button {
+.preview-area input[type="number"]::-webkit-inner-spin-button,
+.preview-area input[type="number"]::-webkit-outer-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
@@ -172,7 +183,7 @@ canvas {
   padding: 12px 16px;
   border-radius: 10px;
   flex: 1 1 250px;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
   transition: transform 0.2s;
 }
 
@@ -194,7 +205,7 @@ canvas {
   text-align: center;
 }
 
-.insight-card ol, 
+.insight-card ol,
 .insight-card ul {
   margin: 0;
   padding-left: 0;
@@ -233,7 +244,7 @@ canvas {
 }
 
 .tips-container ul {
-  list-style-type: '💡';
+  list-style-type: "💡";
   padding-left: 20px;
 }
 
@@ -295,4 +306,151 @@ canvas {
   color: #ccc;
   margin-top: 8px;
   text-align: center;
+}
+
+/* Add Button */
+.add-button {
+  background: linear-gradient(135deg, #00ffff 0%, #00baba 100%);
+  color: #1e1e1e;
+  border: none;
+  padding: 15px 30px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  margin: 20px auto;
+  display: block;
+  box-shadow: 0 4px 15px rgba(0, 255, 255, 0.4);
+  transition: all 0.3s ease;
+}
+
+.add-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 255, 255, 0.6);
+}
+
+.add-button:active {
+  transform: translateY(0);
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.modal-content {
+  background: #2a2a2a;
+  padding: 30px;
+  border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(0, 255, 255, 0.3);
+  max-width: 400px;
+  width: 90%;
+  animation: slideUp 0.3s ease;
+  border: 2px solid #00ffff;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.modal-content h2 {
+  margin-top: 0;
+  color: #00ffff;
+  font-size: 24px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  color: #00ffff;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #00ffff;
+  border-radius: 8px;
+  font-size: 14px;
+  background-color: #1e1e1e;
+  color: #ffffff;
+  transition: border-color 0.3s ease;
+  box-sizing: border-box;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #00baba;
+  box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+}
+
+.modal-buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 25px;
+}
+
+.modal-buttons button {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-confirm {
+  background: linear-gradient(135deg, #00ffff 0%, #00baba 100%);
+  color: #1e1e1e;
+  box-shadow: 0 4px 15px rgba(0, 255, 255, 0.4);
+}
+
+.btn-confirm:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 255, 255, 0.6);
+}
+
+.btn-cancel {
+  background: #333333;
+  color: #ffffff;
+  border: 1px solid #555555;
+}
+
+.btn-cancel:hover {
+  background: #444444;
 }

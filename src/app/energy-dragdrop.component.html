@@ -4,29 +4,60 @@
   <div class="global-settings">
     <div class="state-selector">
       <label for="state">Selecione o Estado:</label>
-      <select id="state" [(ngModel)]="selectedState" (change)="updateTariffFromState()">
-        <option *ngFor="let state of states" [value]="state.code">{{ state.name }}</option>
+      <select
+        id="state"
+        [(ngModel)]="selectedState"
+        (change)="updateTariffFromState()"
+      >
+        <option *ngFor="let state of states" [value]="state.code">
+          {{ state.name }}
+        </option>
       </select>
     </div>
     <div class="tariff-input">
       <label for="tariff">Tarifa (R$/kWh):</label>
-      <input id="tariff" type="number" [(ngModel)]="globalTariff" (input)="recalculate()" />
+      <input
+        id="tariff"
+        type="number"
+        [(ngModel)]="globalTariff"
+        (input)="recalculate()"
+      />
     </div>
   </div>
 
   <div class="state-selector">
-    <p class="simple-text">*Lembre-se que isto é uma estimativa. Para maior precisão, confirme a tarifa da sua região.</p>
+    <p class="simple-text">
+      *Lembre-se que isto é uma estimativa. Para maior precisão, confirme a
+      tarifa da sua região.
+    </p>
   </div>
 
   <div class="gallery">
-    <div *ngFor="let key of applianceKeys" class="appliance" draggable="true"
-         (dragstart)="onDragStart($event,key)">
+    <div
+      *ngFor="let key of applianceKeys"
+      class="appliance"
+      draggable="true"
+      (dragstart)="onDragStart($event, key)"
+    >
       <img [src]="appliances[key].image" [alt]="appliances[key].label" />
       <p>{{ appliances[key].label }}</p>
     </div>
+
+    <!-- Add button in the gallery -->
+    <div class="appliance add-appliance-button" (click)="openAddDialog()">
+      <img
+        src="https://cdn-icons-png.flaticon.com/512/1828/1828926.png"
+        alt="Adicionar"
+      />
+      <p>Adicionar</p>
+    </div>
   </div>
 
-  <div class="dropzone" (dragover)="$event.preventDefault()" (drop)="onDrop($event)">
+  <div
+    class="dropzone"
+    (dragover)="$event.preventDefault()"
+    (drop)="onDrop($event)"
+  >
     <ng-container *ngIf="selectedAppliances.length === 0">
       <p>Arraste aqui</p>
     </ng-container>
@@ -34,22 +65,49 @@
     <div *ngFor="let key of selectedAppliances" class="preview-area">
       <img [src]="appliances[key].image" [alt]="appliances[key].label" />
       <div class="info">
-        <p><strong>{{ appliances[key].label }}</strong></p>
-        
-        <p><strong>Quantidade:</strong>
-          <select class="quantity-selector" [(ngModel)]="usage[key].quantity" (change)="recalculate()">
-            <option *ngFor="let i of [1,2,3,4,5,6,7,8,9,10]" [value]="i">{{ i }}</option>
+        <p>
+          <strong>{{ appliances[key].label }}</strong>
+        </p>
+
+        <p>
+          <strong>Quantidade:</strong>
+          <select
+            class="quantity-selector"
+            [(ngModel)]="usage[key].quantity"
+            (change)="recalculate()"
+          >
+            <option
+              *ngFor="let i of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]"
+              [value]="i"
+            >
+              {{ i }}
+            </option>
           </select>
         </p>
 
-        <p><strong>Potência (W):</strong>
-          <input type="number" [(ngModel)]="usage[key].powerW" (input)="recalculate()" /> W
+        <p>
+          <strong>Potência (W):</strong>
+          <input
+            type="number"
+            [(ngModel)]="usage[key].powerW"
+            (input)="recalculate()"
+          />
+          W
         </p>
-        
-        <p><strong>Uso por dia:</strong>
-          <input type="number" [(ngModel)]="usage[key].minutesPerDay" (input)="recalculate()" /> min/dia
+
+        <p>
+          <strong>Uso por dia:</strong>
+          <input
+            type="number"
+            [(ngModel)]="usage[key].minutesPerDay"
+            (input)="recalculate()"
+          />
+          min/dia
         </p>
-        <p class="hour-display">Equivale a: {{ getMinutesAsHours(usage[key].minutesPerDay) }} horas/dia</p>
+        <p class="hour-display">
+          Equivale a:
+          {{ getMinutesAsHours(usage[key].minutesPerDay) }} horas/dia
+        </p>
 
         <button (click)="removeAppliance(key)">Remover</button>
       </div>
@@ -58,18 +116,23 @@
 
   <div *ngIf="selectedAppliances.length > 0" class="charts">
     <h3>Consumo de Energia e Custo</h3>
-    <canvas baseChart
+    <canvas
+      baseChart
       [data]="barChartData"
       [options]="barChartOptions"
       [type]="'bar'"
-      style="width: 100%; max-width: 900px; height: 450px;">
+      style="width: 100%; max-width: 900px; height: 450px"
+    >
     </canvas>
 
     <div class="insights-container">
       <div class="insight-card">
         <h3>🔋 Consumo Total</h3>
         <p>{{ consumoTotal }} kWh/semana</p>
-        <small>Soma do consumo de todos os seus aparelhos no período de uma semana.</small>
+        <small
+          >Soma do consumo de todos os seus aparelhos no período de uma
+          semana.</small
+        >
       </div>
       <div class="insight-card">
         <h3>💡 Mais Econômico</h3>
@@ -79,50 +142,117 @@
       <div class="insight-card">
         <h3>📉 Média por Aparelho</h3>
         <p>{{ mediaConsumo }} kWh</p>
-        <small>O consumo médio de energia para cada tipo de aparelho listado.</small>
+        <small
+          >O consumo médio de energia para cada tipo de aparelho listado.</small
+        >
       </div>
       <div class="insight-card">
         <h3>💰 Custo Médio Diário</h3>
         <p>R$ {{ mediaDiaria }}</p>
-        <small>Uma estimativa de quanto você gasta com energia por dia, com base nos aparelhos selecionados.</small>
+        <small
+          >Uma estimativa de quanto você gasta com energia por dia, com base nos
+          aparelhos selecionados.</small
+        >
       </div>
       <div class="insight-card">
         <h3>🏆 Ranking de Consumo</h3>
         <ol>
-          <li *ngFor="let item of ranking">{{ item.nome }}: {{ item.valor }} kWh</li>
+          <li *ngFor="let item of ranking">
+            {{ item.nome }}: {{ item.valor }} kWh
+          </li>
         </ol>
-        <small>Os aparelhos ordenados do maior para o menor consumidor de energia semanal.</small>
+        <small
+          >Os aparelhos ordenados do maior para o menor consumidor de energia
+          semanal.</small
+        >
       </div>
       <div class="insight-card">
         <h3>📊 Participação no Consumo</h3>
         <ul>
-          <li *ngFor="let item of participacao">{{ item.nome }}: {{ item.porcentagem }}%</li>
+          <li *ngFor="let item of participacao">
+            {{ item.nome }}: {{ item.porcentagem }}%
+          </li>
         </ul>
-        <small>A porcentagem que cada aparelho representa no seu consumo total de energia.</small>
+        <small
+          >A porcentagem que cada aparelho representa no seu consumo total de
+          energia.</small
+        >
       </div>
       <div class="insight-card">
         <h3>📊 Variabilidade (Desvio Padrão)</h3>
         <p>{{ desvioPadraoConsumo }} kWh</p>
-        <small>Indica a dispersão do consumo entre os aparelhos. Um valor alto significa que alguns gastam muito mais que a média.</small>
+        <small
+          >Indica a dispersão do consumo entre os aparelhos. Um valor alto
+          significa que alguns gastam muito mais que a média.</small
+        >
       </div>
       <div class="insight-card">
         <h3>📆 Projeção Mensal (Estimativa)</h3>
         <p>R$ {{ projecaoMensal }}</p>
         <small *ngIf="selectedAppliances.length > 1">
-          Com 95% de confiança, seu gasto ficará entre <strong>R$ {{ projecaoMensalMin }}</strong> e <strong>R$ {{ projecaoMensalMax }}</strong>.
+          Com 95% de confiança, seu gasto ficará entre
+          <strong>R$ {{ projecaoMensalMin }}</strong> e
+          <strong>R$ {{ projecaoMensalMax }}</strong
+          >.
         </small>
         <small *ngIf="selectedAppliances.length <= 1">
-            Estimativa de custo para um período de 30 dias com base nos dados fornecidos.
+          Estimativa de custo para um período de 30 dias com base nos dados
+          fornecidos.
         </small>
       </div>
     </div>
-    
+
     <div *ngIf="savingsTips.length > 0" class="tips-container">
-        <h3>💡 Dicas de Economia Personalizadas</h3>
-        <ul>
-          <li *ngFor="let tip of savingsTips">{{ tip }}</li>
-        </ul>
+      <h3>💡 Dicas de Economia Personalizadas</h3>
+      <ul>
+        <li *ngFor="let tip of savingsTips">{{ tip }}</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Modal for adding custom appliance -->
+  <div *ngIf="showAddDialog" class="modal-overlay" (click)="closeAddDialog()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <h3>Adicionar Aparelho Personalizado</h3>
+
+      <div class="form-group">
+        <label for="customName">Nome do Aparelho:</label>
+        <input
+          id="customName"
+          type="text"
+          [(ngModel)]="customApplianceName"
+          placeholder="Ex: Secador de Cabelo"
+        />
       </div>
 
+      <div class="form-group">
+        <label for="customWatts">Potência (Watts):</label>
+        <input
+          id="customWatts"
+          type="number"
+          [(ngModel)]="customApplianceWatts"
+          placeholder="Ex: 1500"
+          min="0"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="customMinutes">Minutos de uso por dia:</label>
+        <input
+          id="customMinutes"
+          type="number"
+          [(ngModel)]="customApplianceMinutes"
+          placeholder="Ex: 120"
+          min="0"
+        />
+      </div>
+
+      <div class="modal-buttons">
+        <button class="btn-cancel" (click)="closeAddDialog()">Cancelar</button>
+        <button class="btn-add" (click)="addCustomAppliance()">
+          Adicionar
+        </button>
+      </div>
+    </div>
   </div>
 </div>
