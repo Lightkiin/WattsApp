@@ -124,7 +124,7 @@ h2 {
   margin: 0;
 }
 
-.preview-area button {
+.btn-remove {
   margin-top: 0.5rem;
   width: 100%;
   padding: 0.4rem;
@@ -137,7 +137,7 @@ h2 {
   transition: background-color 0.2s;
 }
 
-.preview-area button:hover {
+.btn-remove:hover {
   background-color: #00baba;
 }
 
@@ -298,6 +298,87 @@ canvas {
   margin-top: -0.2rem;
   text-align: right;
   padding-right: 10px;
+}
+
+/* All Day Checkbox */
+.all-day-checkbox {
+  margin: 0.8rem 0;
+  display: flex;
+  align-items: center;
+}
+
+.all-day-checkbox label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  gap: 8px;
+}
+
+.all-day-checkbox input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #00ffff;
+}
+
+.all-day-checkbox span {
+  color: #00ffff;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+/* Time Input Container */
+.time-input-container {
+  margin-top: 0.5rem;
+}
+
+/* Time Mode Switch */
+.time-mode-switch {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 0.5rem;
+  width: fit-content;
+}
+
+.switch-btn {
+  padding: 6px 16px;
+  border: 2px solid #333;
+  border-radius: 6px;
+  background-color: transparent;
+  color: #aaa;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.switch-btn.active {
+  background-color: #00baba;
+  color: #1e1e1e;
+  border-color: #00baba;
+  box-shadow: 0 2px 8px rgba(0, 186, 186, 0.4);
+}
+
+.switch-btn:hover:not(.active) {
+  color: #ccc;
+  border-color: #444;
+}
+
+/* All Day Display */
+.all-day-display {
+  margin: 1rem 0;
+  padding: 0.8rem;
+  background-color: #1e1e1e;
+  border-radius: 8px;
+  border: 2px solid #00ffff;
+}
+
+.all-day-text {
+  color: #00ffff;
+  font-weight: 600;
+  text-align: center;
+  margin: 0;
+  font-size: 0.95rem;
 }
 
 .insight-card small {

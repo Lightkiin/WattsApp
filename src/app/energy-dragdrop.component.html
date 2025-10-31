@@ -95,21 +95,59 @@
           W
         </p>
 
-        <p>
-          <strong>Uso por dia:</strong>
-          <input
-            type="number"
-            [(ngModel)]="usage[key].minutesPerDay"
-            (input)="recalculate()"
-          />
-          min/dia
-        </p>
-        <p class="hour-display">
-          Equivale a:
-          {{ getMinutesAsHours(usage[key].minutesPerDay) }} horas/dia
-        </p>
+        <div class="all-day-checkbox">
+          <label>
+            <input
+              type="checkbox"
+              [(ngModel)]="usage[key].allDay"
+              (change)="toggleAllDay(key)"
+            />
+            <span>Dia todo (24h)</span>
+          </label>
+        </div>
 
-        <button (click)="removeAppliance(key)">Remover</button>
+        <div class="time-input-container" *ngIf="!usage[key].allDay">
+          <div class="time-mode-switch">
+            <button
+              class="switch-btn"
+              [class.active]="usage[key].useMinutes"
+              (click)="toggleTimeMode(key)"
+            >
+              Min
+            </button>
+            <button
+              class="switch-btn"
+              [class.active]="!usage[key].useMinutes"
+              (click)="toggleTimeMode(key)"
+            >
+              Horas
+            </button>
+          </div>
+
+          <p>
+            <strong>Uso por dia:</strong>
+            <input
+              type="number"
+              [value]="getDisplayValue(key)"
+              (input)="updateTimeValue(key, +$any($event.target).value)"
+              [step]="usage[key].useMinutes ? 1 : 0.5"
+            />
+            {{ usage[key].useMinutes ? "min/dia" : "h/dia" }}
+          </p>
+
+          <p class="hour-display" *ngIf="usage[key].useMinutes">
+            Equivale a:
+            {{ getMinutesAsHours(usage[key].minutesPerDay) }} horas/dia
+          </p>
+        </div>
+
+        <div class="all-day-display" *ngIf="usage[key].allDay">
+          <p class="all-day-text">⏰ Funcionando 24 horas por dia</p>
+        </div>
+
+        <button class="btn-remove" (click)="removeAppliance(key)">
+          Remover
+        </button>
       </div>
     </div>
   </div>

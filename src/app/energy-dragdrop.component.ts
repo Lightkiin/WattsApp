@@ -54,7 +54,13 @@ export class EnergyDragdropComponent {
 
   // Estrutura de 'usage' atualizada para incluir quantidade e minutos
   usage: {
-    [key: string]: { powerW: number; minutesPerDay: number; quantity: number };
+    [key: string]: {
+      powerW: number;
+      minutesPerDay: number;
+      quantity: number;
+      allDay: boolean;
+      useMinutes: boolean;
+    };
   } = {};
 
   // Tarifa global
@@ -176,6 +182,8 @@ export class EnergyDragdropComponent {
         powerW: this.appliances[key].watt,
         minutesPerDay: 60,
         quantity: 1,
+        allDay: false,
+        useMinutes: true,
       };
       this.recalculate();
     }
@@ -192,6 +200,43 @@ export class EnergyDragdropComponent {
       return '0.00';
     }
     return (minutes / 60).toFixed(2);
+  }
+
+  // Função para alternar entre dia todo
+  toggleAllDay(key: string) {
+    if (this.usage[key].allDay) {
+      this.usage[key].minutesPerDay = 1440; // 24 horas em minutos
+    } else {
+      this.usage[key].minutesPerDay = 60; // Volta para 1 hora
+    }
+    this.recalculate();
+  }
+
+  // Função para obter o valor no formato correto (horas ou minutos)
+  getDisplayValue(key: string): number {
+    if (this.usage[key].allDay) {
+      return 24;
+    }
+    if (this.usage[key].useMinutes) {
+      return this.usage[key].minutesPerDay;
+    } else {
+      return this.usage[key].minutesPerDay / 60;
+    }
+  }
+
+  // Função para atualizar o valor baseado no modo (horas ou minutos)
+  updateTimeValue(key: string, value: number) {
+    if (this.usage[key].useMinutes) {
+      this.usage[key].minutesPerDay = value;
+    } else {
+      this.usage[key].minutesPerDay = value * 60;
+    }
+    this.recalculate();
+  }
+
+  // Função para alternar entre minutos e horas
+  toggleTimeMode(key: string) {
+    this.usage[key].useMinutes = !this.usage[key].useMinutes;
   }
 
   recalculate() {
@@ -293,6 +338,8 @@ export class EnergyDragdropComponent {
       powerW: this.customApplianceWatts,
       minutesPerDay: this.customApplianceMinutes,
       quantity: 1,
+      allDay: false,
+      useMinutes: true,
     };
 
     // Recalculate and close dialog
